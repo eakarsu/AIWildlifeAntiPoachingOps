@@ -135,7 +135,7 @@ export const login = (email, password) =>
   request('/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) });
 export const getMe = () => request('/auth/me');
 
-// AI endpoints — 16 wildlife verbs
+// AI endpoints — 16 wildlife verbs + 5 new MECHANICAL verbs (apply pass 7)
 export const aiSpeciesId         = (body) => request('/ai/species-id-from-image', { method: 'POST', body: JSON.stringify(body || {}) });
 export const aiPatrolDispatch    = (body) => request('/ai/patrol-dispatch',       { method: 'POST', body: JSON.stringify(body || {}) });
 export const aiHotZonePredict    = (body) => request('/ai/hot-zone-predict',      { method: 'POST', body: JSON.stringify(body || {}) });
@@ -152,6 +152,40 @@ export const aiWeatherImpact     = (body) => request('/ai/weather-impact-patrol'
 export const aiSupplyResupply    = (body) => request('/ai/supply-resupply-plan',  { method: 'POST', body: JSON.stringify(body || {}) });
 export const aiVendorQuality     = (body) => request('/ai/vendor-quality-score',  { method: 'POST', body: JSON.stringify(body || {}) });
 export const aiDonorImpact       = (body) => request('/ai/donor-impact-report',   { method: 'POST', body: JSON.stringify(body || {}) });
+
+// Apply pass 7 — MECHANICAL backlog verbs
+export const aiIntelReportSummarize    = (body) => request('/ai/intel-report-summarize',    { method: 'POST', body: JSON.stringify(body || {}) });
+export const aiIncidentNarrator        = (body) => request('/ai/incident-narrator',         { method: 'POST', body: JSON.stringify(body || {}) });
+export const aiSnarePrevalenceForecast = (body) => request('/ai/snare-prevalence-forecast', { method: 'POST', body: JSON.stringify(body || {}) });
+export const aiMultiPatrolOptimize     = (body) => request('/ai/multi-patrol-optimize',     { method: 'POST', body: JSON.stringify(body || {}) });
+export const aiCameraTrapImageClassify = (body) => request('/ai/camera-trap-image-classify',{ method: 'POST', body: JSON.stringify(body || {}) });
+
+// Apply pass 7 — community reports (triage UI consumes the internal endpoints).
+export const communityReportsApi = {
+  list:   (status)  => request(`/community-reports${status ? `?status=${encodeURIComponent(status)}` : ''}`),
+  get:    (id)      => request(`/community-reports/${id}`),
+  triage: (id, d)   => request(`/community-reports/${id}/triage`, { method: 'PATCH', body: JSON.stringify(d) }),
+};
+
+// Apply pass 7 — anonymous tips (PII-stripped, retention-bound).
+export const anonymousTipsApi = {
+  list:   (status)  => request(`/anonymous-tips${status ? `?status=${encodeURIComponent(status)}` : ''}`),
+  triage: (id, d)   => request(`/anonymous-tips/${id}/triage`, { method: 'PATCH', body: JSON.stringify(d) }),
+  purgeExpired:  () => request('/anonymous-tips/purge-expired', { method: 'POST' }),
+};
+
+// Apply pass 7 — partner integration probes (503 stubs until creds wired).
+export const partnersApi = {
+  smartImport:        () => request('/partners/smart-patrol/import', { method: 'POST', body: JSON.stringify({}) }),
+  smartExport:        () => request('/partners/smart-patrol/export', { method: 'POST', body: JSON.stringify({}) }),
+  smartStatus:        () => request('/partners/smart-patrol/status'),
+  ivoryTraffic:       () => request('/partners/ivory-market/feed/traffic'),
+  ivoryEia:           () => request('/partners/ivory-market/feed/eia'),
+  ivoryWcs:           () => request('/partners/ivory-market/feed/wcs'),
+  interpol:           () => request('/partners/partner-agency/interpol-wisdom',    { method: 'POST', body: JSON.stringify({}) }),
+  nationalAuthority:  () => request('/partners/partner-agency/national-authority', { method: 'POST', body: JSON.stringify({}) }),
+  log:                () => request('/partners/partner-agency/log'),
+};
 
 // AI history
 export const getAIHistory = (feature, limit = 25) => {

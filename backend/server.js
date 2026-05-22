@@ -53,6 +53,15 @@ app.get('/api/health', (req, res) => {
 // Auth (public)
 app.use('/api/auth', require('./routes/auth'));
 
+// ────────────────────────────────────────────────────────────────────────
+// Apply pass 7 (full backlog) — PUBLIC intake endpoints, mounted BEFORE
+// the auth middleware so unauthenticated reporters and tipsters can submit.
+// ────────────────────────────────────────────────────────────────────────
+const communityReports = require('./routes/communityReports');
+const anonymousTips    = require('./routes/anonymousTips');
+app.use('/api/public/community-reports', communityReports.publicRouter);
+app.use('/api/public/anonymous-tips',    anonymousTips.publicRouter);
+
 // Everything below this line requires a Bearer token.
 app.use('/api', authenticateToken);
 
@@ -89,6 +98,14 @@ app.use('/api/dashboard', require('./routes/dashboard'));
 
 // Custom Views — Tactical Views page (park map, snare heatmap, patrol calendar, sighting trend)
 app.use('/api/custom-views', require('./routes/customViews'));
+
+// ────────────────────────────────────────────────────────────────────────
+// Apply pass 7 (full backlog) — INTERNAL triage + integration stubs.
+// All require Bearer token (mounted after authenticateToken above).
+// ────────────────────────────────────────────────────────────────────────
+app.use('/api/community-reports', communityReports.internalRouter);
+app.use('/api/anonymous-tips',    anonymousTips.internalRouter);
+app.use('/api/partners',          require('./routes/partnerStubs'));
 
 app.listen(PORT, () => {
   console.log(`\nAI Wildlife Anti-Poaching Ops API running on http://localhost:${PORT}\n`);

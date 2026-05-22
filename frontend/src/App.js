@@ -42,6 +42,18 @@ import AISupplyResupplyPage from './pages/AISupplyResupplyPage';
 import AIVendorQualityPage from './pages/AIVendorQualityPage';
 import AIDonorImpactPage from './pages/AIDonorImpactPage';
 
+// 5 new AI pages (apply pass 7 — full backlog)
+import AIIntelReportSummarizePage    from './pages/AIIntelReportSummarizePage';
+import AIIncidentNarratorPage        from './pages/AIIncidentNarratorPage';
+import AISnarePrevalenceForecastPage from './pages/AISnarePrevalenceForecastPage';
+import AIMultiPatrolOptimizePage     from './pages/AIMultiPatrolOptimizePage';
+import AICameraTrapClassifyPage      from './pages/AICameraTrapClassifyPage';
+
+// Triage + partners (apply pass 7)
+import CommunityReportsPage    from './pages/CommunityReportsPage';
+import AnonymousTipsPage       from './pages/AnonymousTipsPage';
+import PartnerIntegrationsPage from './pages/PartnerIntegrationsPage';
+
 // Admin
 import WebhooksPage from './pages/WebhooksPage';
 
@@ -52,6 +64,9 @@ import LoginPage from './pages/LoginPage';
 import { getToken } from './services/api';
 
 import './App.css';
+
+import CodexCustomVizFeature from './pages/CodexCustomVizFeature';
+import CodexOperationsFeature from './pages/CodexOperationsFeature';
 
 function RequireAuth({ children }) {
   const location = useLocation();
@@ -69,6 +84,9 @@ function ShellRoutes() {
         <Topbar />
         <div style={{ padding: '24px 32px' }}>
           <Routes>
+        <Route path="/codex/custom-viz" element={<CodexCustomVizFeature />} />
+        <Route path="/codex/operations" element={<CodexOperationsFeature />} />
+
             <Route path="/" element={<Dashboard />} />
 
             <Route path="/rangers"           element={<RangersPage />} />
@@ -106,6 +124,18 @@ function ShellRoutes() {
             <Route path="/ai/supply-resupply-plan"   element={<AISupplyResupplyPage />} />
             <Route path="/ai/vendor-quality-score"   element={<AIVendorQualityPage />} />
             <Route path="/ai/donor-impact-report"    element={<AIDonorImpactPage />} />
+
+            {/* Apply pass 7 — 5 new AI verbs */}
+            <Route path="/ai/intel-report-summarize"    element={<AIIntelReportSummarizePage />} />
+            <Route path="/ai/incident-narrator"         element={<AIIncidentNarratorPage />} />
+            <Route path="/ai/snare-prevalence-forecast" element={<AISnarePrevalenceForecastPage />} />
+            <Route path="/ai/multi-patrol-optimize"     element={<AIMultiPatrolOptimizePage />} />
+            <Route path="/ai/camera-trap-image-classify" element={<AICameraTrapClassifyPage />} />
+
+            {/* Apply pass 7 — triage + partners */}
+            <Route path="/community-reports"  element={<CommunityReportsPage />} />
+            <Route path="/anonymous-tips"     element={<AnonymousTipsPage />} />
+            <Route path="/partner-integrations" element={<PartnerIntegrationsPage />} />
 
             <Route path="/webhooks" element={<WebhooksPage />} />
 

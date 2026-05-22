@@ -47,10 +47,15 @@ const GOVERNANCE = [
 
 const AI_TACTICAL = [
   { to: '/ai/species-id-from-image', label: 'AI · Species ID from Image' },
+  { to: '/ai/camera-trap-image-classify', label: 'AI · Camera Trap Classify' },
   { to: '/ai/patrol-dispatch',       label: 'AI · Patrol Dispatch' },
+  { to: '/ai/multi-patrol-optimize', label: 'AI · Multi-Patrol Optimize' },
   { to: '/ai/hot-zone-predict',      label: 'AI · Hot-Zone Predict' },
   { to: '/ai/snare-density-heatmap', label: 'AI · Snare Density Heatmap' },
+  { to: '/ai/snare-prevalence-forecast', label: 'AI · Snare Prevalence Forecast' },
   { to: '/ai/poacher-pattern-analyze',label:'AI · Poacher Pattern Analyze' },
+  { to: '/ai/intel-report-summarize',  label: 'AI · Intel Report Summarize' },
+  { to: '/ai/incident-narrator',     label: 'AI · Incident Narrator' },
   { to: '/ai/ranger-safety-brief',   label: 'AI · Ranger Safety Brief' },
   { to: '/ai/drone-flight-plan',     label: 'AI · Drone Flight Plan' },
   { to: '/ai/vehicle-routing',       label: 'AI · Vehicle Routing' },
@@ -71,8 +76,14 @@ const TACTICAL_VIEWS = [
   { to: '/custom-views', label: 'Tactical Views' },
 ];
 
+const INTAKE = [
+  { to: '/community-reports', label: 'Community Reports' },
+  { to: '/anonymous-tips',    label: 'Anonymous Tips' },
+];
+
 const ADMIN = [
-  { to: '/webhooks', label: 'Webhooks' },
+  { to: '/webhooks',             label: 'Webhooks' },
+  { to: '/partner-integrations', label: 'Partner Integrations' },
 ];
 
 function group(label, links) {
@@ -109,6 +120,7 @@ export default function Sidebar() {
       {group('Cases',      CASES)}
       {group('Governance', GOVERNANCE)}
       {group('Tactical Views', TACTICAL_VIEWS)}
+      {group('Public Intake', INTAKE)}
       {group('AI Tactical',  AI_TACTICAL)}
       {group('AI Reporting', AI_REPORTING)}
       {group('Admin', ADMIN)}

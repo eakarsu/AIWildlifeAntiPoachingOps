@@ -42,6 +42,37 @@ const SYSTEM_PROMPT =
   'intelligence, court-case prep, drone/vehicle routing, and donor reporting. Always return strict JSON ' +
   'in the exact schema requested. Treat all locations and individuals as illustrative training scenarios.';
 
+// Anti-engagement guardrail — appended to any system prompt whose output could be
+// construed as a recommendation for action against suspected poachers (patrol
+// dispatch, drone overwatch, multi-patrol optimization). The product decision is
+// that ALL such outputs are advisory only. The on-the-ground ranger lead retains
+// authority. No targeting, no use-of-force posture, no pursuit doctrine.
+const ENGAGEMENT_GUARDRAIL =
+  ' STRICT RULES OF ENGAGEMENT (DO NOT VIOLATE): Output is advisory only. ' +
+  'Do NOT recommend lethal force, weapon selection, ambush positions, targeting ' +
+  'of any individual, pursuit doctrine, or any kinetic action. Defensive posture, ' +
+  'evidence preservation, observation, communication, and de-escalation only. ' +
+  'A licensed ranger lead retains decision authority on any contact with suspects. ' +
+  'Include `advisory_only: true` and `requires_ranger_lead_approval: true` in your JSON output.';
+
+// Wrap an AI result with the standard advisory contract. Used by route handlers
+// that involve potential poacher engagement (patrol-dispatch, drone-flight-plan,
+// multi-patrol-optimize).
+function wrapAdvisory(result, kind = 'engagement_adjacent') {
+  if (!result || typeof result !== 'object') {
+    return { advisory_only: true, requires_ranger_lead_approval: true, kind, raw: result };
+  }
+  return {
+    ...result,
+    advisory_only: true,
+    requires_ranger_lead_approval: true,
+    no_targeting_disclaimer:
+      'This output does not recommend lethal force, targeting of individuals, or pursuit. ' +
+      'Ranger lead on the ground is the final decision authority on any contact with suspects.',
+    advisory_kind: kind,
+  };
+}
+
 function callOpenRouter(systemPrompt, userPrompt) {
   return new Promise((resolve, reject) => {
     const { key, model } = getOpenRouterCreds();
@@ -140,9 +171,9 @@ async function speciesIdFromImage(description, context = {}) {
   return safeJsonParse(r, { summary: typeof r === 'string' ? r : 'No response', alternates: [] });
 }
 
-// 2) patrol-dispatch
+// 2) patrol-dispatch  — engagement-adjacent, advisory-only with guardrails.
 async function patrolDispatch(objective, context = {}) {
-  const sys = `${SYSTEM_PROMPT} Build a ranger patrol dispatch plan. Return strict JSON:
+  const sys = `${SYSTEM_PROMPT}${ENGAGEMENT_GUARDRAIL} Build a ranger patrol dispatch plan. Return strict JSON:
 {
   "patrol_name": string,
   "objective": string,
@@ -157,7 +188,8 @@ async function patrolDispatch(objective, context = {}) {
 }`;
   const usr = `Objective: ${objective}\nContext: ${JSON.stringify(context)}`;
   const r = await callOpenRouter(sys, usr);
-  return safeJsonParse(r, { summary: typeof r === 'string' ? r : 'No response', patrol_legs: [] });
+  const parsed = safeJsonParse(r, { summary: typeof r === 'string' ? r : 'No response', patrol_legs: [] });
+  return wrapAdvisory(parsed, 'patrol_dispatch');
 }
 
 // 3) hot-zone-predict
@@ -271,9 +303,9 @@ async function courtCaseSummary(caseRecord, evidence = {}) {
   return safeJsonParse(r, { summary: typeof r === 'string' ? r : 'No response', elements_of_offence: [] });
 }
 
-// 9) drone-flight-plan
+// 9) drone-flight-plan  — engagement-adjacent, advisory-only with guardrails.
 async function droneFlightPlan(objective, params = {}) {
-  const sys = `${SYSTEM_PROMPT} Generate a drone flight plan for thermal-overwatch patrol. Return strict JSON:
+  const sys = `${SYSTEM_PROMPT}${ENGAGEMENT_GUARDRAIL} Generate a drone flight plan for thermal-overwatch patrol. Return strict JSON:
 {
   "drone_id": string,
   "mission_name": string,
@@ -287,7 +319,8 @@ async function droneFlightPlan(objective, params = {}) {
 }`;
   const usr = `Objective: ${objective}\nParams:\n${JSON.stringify(params, null, 2)}`;
   const r = await callOpenRouter(sys, usr);
-  return safeJsonParse(r, { summary: typeof r === 'string' ? r : 'No response', waypoints: [] });
+  const parsed = safeJsonParse(r, { summary: typeof r === 'string' ? r : 'No response', waypoints: [] });
+  return wrapAdvisory(parsed, 'drone_flight_plan');
 }
 
 // 10) vehicle-routing
@@ -405,9 +438,120 @@ async function donorImpactReport(snapshot = {}, donorContext = {}) {
   return safeJsonParse(r, { summary: typeof r === 'string' ? r : 'No response', outcomes: [] });
 }
 
+// ──────────────────────────────────────────────────────────────────────────
+// MECHANICAL backlog (apply pass 7)
+// ──────────────────────────────────────────────────────────────────────────
+
+// 17) intel-report-summarize  — free-text intel ingest → structured summary.
+async function intelReportSummarize(reportText, sourceLabel = '') {
+  const sys = `${SYSTEM_PROMPT} Convert a free-text wildlife-crime intel report into a structured summary suitable for the watch officer. Return strict JSON:
+{
+  "title": string,
+  "headline": string,
+  "actors": [{ "label": string, "role": string, "confidence": number }],
+  "locations": [{ "place": string, "lat_lon": string, "confidence": number }],
+  "modus": [string],
+  "timeline": [{ "ts": string, "event": string }],
+  "weapons_or_tools": [string],
+  "wildlife_targets": [string],
+  "overall_confidence": "low"|"medium"|"high",
+  "tasking_suggestions": [string],
+  "summary": string
+}`;
+  const usr = `Source label: ${sourceLabel || 'unspecified'}\nReport text:\n${reportText}`;
+  const r = await callOpenRouter(sys, usr);
+  return safeJsonParse(r, { summary: typeof r === 'string' ? r : 'No response', actors: [], locations: [] });
+}
+
+// 18) incident-narrator  — ranger field notes → structured incident draft.
+async function incidentNarrator(notes, context = {}) {
+  const sys = `${SYSTEM_PROMPT} Convert raw ranger field notes into a structured incident draft. Be conservative — never escalate severity beyond what the notes support. Return strict JSON:
+{
+  "incident_type": string,
+  "severity_suggested": "low"|"medium"|"high"|"critical",
+  "location": string,
+  "opened_at_iso": string,
+  "actors_observed": [{ "description": string, "count": number }],
+  "evidence_list": [{ "item": string, "chain_of_custody_note": string }],
+  "wildlife_impact": [string],
+  "narrative": string,
+  "recommended_next_actions": [string],
+  "missing_information": [string],
+  "draft_incident_id_suggestion": string,
+  "summary": string
+}`;
+  const usr = `Ranger field notes:\n${notes}\n\nContext:\n${JSON.stringify(context)}`;
+  const r = await callOpenRouter(sys, usr);
+  return safeJsonParse(r, { summary: typeof r === 'string' ? r : 'No response', evidence_list: [] });
+}
+
+// 19) snare-prevalence-forecast  — 7/30-day time-series forecast from history.
+async function snarePrevalenceForecast(zone, horizonDays, historyRows = []) {
+  const sys = `${SYSTEM_PROMPT} Produce a per-day snare-prevalence forecast for a zone based on recent finds. Be explicit about uncertainty. Return strict JSON:
+{
+  "zone": string,
+  "horizon_days": number,
+  "baseline_per_day": number,
+  "daily_forecast": [{ "day_offset": number, "expected_count": number, "lower": number, "upper": number }],
+  "trend": "declining"|"flat"|"rising"|"surge",
+  "drivers": [string],
+  "recommended_sweeps_per_week": number,
+  "confidence": "low"|"medium"|"high",
+  "summary": string
+}`;
+  const usr = `Zone: ${zone}\nHorizon (days): ${horizonDays}\nHistory rows (most-recent first):\n${JSON.stringify(historyRows, null, 2)}`;
+  const r = await callOpenRouter(sys, usr);
+  return safeJsonParse(r, { summary: typeof r === 'string' ? r : 'No response', daily_forecast: [] });
+}
+
+// 20) multi-patrol-optimize — N rangers × M zones × shifts under constraints.
+async function multiPatrolOptimize(inputs = {}) {
+  const sys = `${SYSTEM_PROMPT}${ENGAGEMENT_GUARDRAIL} Produce a multi-patrol optimization that assigns rangers across shifts and zones under fuel, skill, K9, and drone-overwatch constraints. Return strict JSON:
+{
+  "horizon": string,
+  "assignments": [{
+    "ranger_id": string,
+    "shift": string,
+    "zone": string,
+    "vehicle_id": string,
+    "drone_overwatch_id": string,
+    "rationale": string
+  }],
+  "uncovered_zones": [{ "zone": string, "reason": string, "mitigation": string }],
+  "fuel_usage_estimate_l": number,
+  "skill_coverage": [{ "skill": string, "covered": boolean }],
+  "constraint_warnings": [string],
+  "score": number,
+  "summary": string
+}`;
+  const usr = `Inputs (rangers, zones, shifts, constraints):\n${JSON.stringify(inputs, null, 2)}`;
+  const r = await callOpenRouter(sys, usr);
+  const parsed = safeJsonParse(r, { summary: typeof r === 'string' ? r : 'No response', assignments: [] });
+  return wrapAdvisory(parsed, 'multi_patrol_optimize');
+}
+
+// 21) camera-trap-image-classify  — text-fallback classifier persisted to row.
+async function cameraTrapImageClassify(description, cameraContext = {}) {
+  const sys = `${SYSTEM_PROMPT} Classify a wildlife camera-trap capture from a text description (and any attached metadata). Return strict JSON:
+{
+  "primary": { "common_name": string, "scientific": string, "confidence": number, "status_iucn": string },
+  "alternates": [{ "common_name": string, "scientific": string, "confidence": number }],
+  "indicator_features": [string],
+  "is_human_present": boolean,
+  "is_poacher_indicator": boolean,
+  "poaching_risk": "low"|"medium"|"high"|"critical",
+  "suggested_camera_status": "online"|"needs_check"|"obscured",
+  "summary": string
+}`;
+  const usr = `Description:\n${description}\n\nCamera context:\n${JSON.stringify(cameraContext, null, 2)}`;
+  const r = await callOpenRouter(sys, usr);
+  return safeJsonParse(r, { summary: typeof r === 'string' ? r : 'No response', alternates: [] });
+}
+
 module.exports = {
   callOpenRouter,
   safeJsonParse,
+  wrapAdvisory,
   speciesIdFromImage,
   patrolDispatch,
   hotZonePredict,
@@ -424,4 +568,9 @@ module.exports = {
   supplyResupplyPlan,
   vendorQualityScore,
   donorImpactReport,
+  intelReportSummarize,
+  incidentNarrator,
+  snarePrevalenceForecast,
+  multiPatrolOptimize,
+  cameraTrapImageClassify,
 };

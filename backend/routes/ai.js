@@ -387,6 +387,167 @@ const SAMPLES = {
       values: { donor_notes: 'Donor: USAID conservation capacity grant. Bias toward ranger training records (15 courses), 2 drone pilots qualified, sniper basic course completed.' },
     },
   ],
+
+  // ─── Apply pass 7 (full backlog) sample fills ───
+  'intel-report-summarize': [
+    {
+      label: 'Kruger informer report — bushmeat trader',
+      values: {
+        report_text: 'Informer "Blue" reports a man known as Big J operating out of Komatipoort moves bushmeat in 50kg loads every Thursday night on a white Hilux double-cab plate not seen but with a roof rack and orange flashing light. Drops at a butcher in Hectorspruit before dawn. Big J carries a short shotgun but is not reported to have shot rangers. The route enters Kruger via H7 cut-fence point. Active last 6 weeks.',
+        source_label: 'Informer "Blue" / Kruger sector 4',
+      },
+    },
+    {
+      label: 'Niassa river chatter — gill nets',
+      values: {
+        report_text: 'Local boatman heard at landing — two skiffs running gill nets along Rufiji bend at dusk this week. One operator named only as "Mussa". Nets are red monofilament 100m each. They land catch at a small camp 1.5km north of the bend with a green tarp visible from the river.',
+        source_label: 'Matambwe HQ patrol-leader debrief',
+      },
+    },
+    {
+      label: 'Tsavo tusk smuggling cell',
+      values: {
+        report_text: 'Court witness statement (sealed for prosecution) indicates a cell of three brothers running tusks Tsavo->Voi->Mombasa via tourist minibus. Active since Q4 2025. They use Kenya–Tanzania border porters near Lunga Lunga. Tusks reportedly cut at a workshop near Mariakani.',
+        source_label: 'Court CC-2026-0011 witness statement',
+      },
+    },
+    {
+      label: 'Aberdares logging gang',
+      values: {
+        report_text: 'Local NGO field-officer notes recurring chainsaw activity in the bamboo zone above 2,800m every full-moon weekend. Logs transported by donkey to a sawmill in Mweiga. Loose talk in town mentions a foreman called "Kamau".',
+        source_label: 'Aberdares NGO partner officer',
+      },
+    },
+    {
+      label: 'Hluhluwe rhino-cell HUMINT',
+      values: {
+        report_text: 'HUMINT — a syndicate operating across KwaZulu Natal targets dehorned rhino survivors for residual stump. Two scouts reportedly enter via the den-7 culvert. They have used .375 H&H rifles previously. They observe ranger shift change at 06:00.',
+        source_label: 'KZN Wildlife Crime Unit shared intel',
+      },
+    },
+  ],
+
+  'incident-narrator': [
+    {
+      label: 'Kabini eastern fence — gunshot & cut wire',
+      values: {
+        notes: '23:14 ish, two rangers (me + RNG-001) heard one or two shots from the SE while on foot patrol km3.2 of east fence. Closed in 12 minutes. Found cut wire (lower 3 strands), boot prints x 2 sets going east, .375 brass found on access road shoulder. No contact made. Drone DRN-001 launched 23:30 thermal, lost track in dense brush.',
+        ranger_id: 'RNG-001',
+      },
+    },
+    {
+      label: 'Niassa sector 4 — snare cluster discovery',
+      values: {
+        notes: 'Morning foot sweep 06:30 RNG-015 + 2. Found 7 wire foot snares + 1 cable neck snare in 200m radius east of waterhole 4-N. Approx 24-48hr old (rust pattern). No actors observed. One snare baited with banana stub. Bagged + tagged all wire as evidence.',
+        ranger_id: 'RNG-015',
+      },
+    },
+    {
+      label: 'Selous Rufiji — illegal fishing intercept',
+      values: {
+        notes: 'Boat patrol 05:45 RNG-009 + 1 intercepted skiff Rufiji bend bank. 3 occupants ran on landing N bank into bush — pursuit not attempted, river current strong. Recovered: 2 gill nets red mono 100m, 14 fish (assorted catfish), 1 panga, 1 spare paddle. No firearms. Photographed scene, tagged exhibits.',
+        ranger_id: 'RNG-009',
+      },
+    },
+    {
+      label: 'Aberdares — chainsaw activity heard, no contact',
+      values: {
+        notes: 'Cold night Aberdares bamboo zone 02:10 RNG-014 + 1. Heard chainsaw start/stop x 3 cycles ~800m SE of position. Mist heavy, drone not flyable. Returned at first light: found 2 bamboo stems freshly cut at ground, no sawdust trail recovered. No suspects.',
+        ranger_id: 'RNG-014',
+      },
+    },
+    {
+      label: 'Hluhluwe den 7 — gunshot detection',
+      values: {
+        notes: '02:50 acoustic sensor + RNG-003 confirm 1 round, .375 class, NE of den 7. K9 not deployed (handler off-shift). Drone DRN-004 thermal up at 03:08, scanned 400m radius, no human heat. Rhino bull "Ndlovu" confirmed alive at first light, no wound. Cordon stood up 03:30.',
+        ranger_id: 'RNG-003',
+      },
+    },
+  ],
+
+  'snare-prevalence-forecast': [
+    { label: 'Niassa sector 4 — 7 day',     values: { zone: 'Niassa sector 4', horizon_days: 7 } },
+    { label: 'Kabini eastern fence — 7 day', values: { zone: 'Kabini eastern fence', horizon_days: 7 } },
+    { label: 'Selous Rufiji bend — 14 day',  values: { zone: 'Selous Rufiji bend', horizon_days: 14 } },
+    { label: 'Aberdares bamboo zone — 30 day', values: { zone: 'Aberdares bamboo zone', horizon_days: 30 } },
+    { label: 'Kruger South sector A — 7 day', values: { zone: 'Kruger South sector A', horizon_days: 7 } },
+  ],
+
+  'multi-patrol-optimize': [
+    {
+      label: 'Kabini next-24h, 8 rangers, 4 zones',
+      values: {
+        horizon: 'next_24h',
+        constraints_notes: 'Eight rangers RNG-001..008 available, four zones (E-fence km3-5, gate trail, waterhole 7, NE ridge). 3 vehicles only. K9 team needed at E-fence and gate. Drone overwatch DRN-001 + DRN-002.',
+      },
+    },
+    {
+      label: 'Hluhluwe next-12h rhino-zone surge',
+      values: {
+        horizon: 'next_12h',
+        constraints_notes: '5 rangers available across 2 shifts, 3 rhino dens to cover. Fuel: VEH-003 low, VEH-004 full. K9 (1 team). Drone overwatch DRN-004.',
+      },
+    },
+    {
+      label: 'Niassa multi-day deep reserve',
+      values: {
+        horizon: 'next_72h',
+        constraints_notes: '6 rangers, 2 shifts/day, 3 sub-sectors. VHF repeater covers sectors 1-3 only. RNG-015 lead. Skiff VEH-015 needed for sector 4 only.',
+      },
+    },
+    {
+      label: 'Kruger South gate-funnel sweep',
+      values: {
+        horizon: 'next_24h',
+        constraints_notes: '12 rangers, 3 zones around major gates, 4 vehicles, 2 drones. Tourist traffic peaks 06:00-10:00. Prefer overt presence at gates, covert observation on cut-fence points.',
+      },
+    },
+    {
+      label: 'Mara North dawn sweep',
+      values: {
+        horizon: 'next_12h',
+        constraints_notes: '7 rangers, 2 vehicles, 1 drone. Cross Talek river only if level below 0.4m. K9 team available for one zone only.',
+      },
+    },
+  ],
+
+  'camera-trap-image-classify': [
+    {
+      label: 'CAM-007 night-IR cat capture',
+      values: {
+        camera_id: 'CAM-007',
+        description: 'Solitary cat, golden-tan coat with dense rosette markings, white belly, long thick tail, ~70kg estimated. Two clear frames at 23:50.',
+      },
+    },
+    {
+      label: 'CAM-011 pangolin night capture',
+      values: {
+        camera_id: 'CAM-011',
+        description: 'Small armored mammal, brown overlapping keratin scales, curled defensive ball near ant mound. 40cm long.',
+      },
+    },
+    {
+      label: 'CAM-015 tiger Kabini',
+      values: {
+        camera_id: 'CAM-015',
+        description: 'Large striped cat, orange coat with vertical black stripes, white underside, moving SE along fence line at 04:55.',
+      },
+    },
+    {
+      label: 'CAM-018 human-figure suspect',
+      values: {
+        camera_id: 'CAM-018',
+        description: 'Bipedal figure, dark clothing, head covered, carrying what appears to be a long object (rifle or pole), moving NE 02:18 IR capture. No vehicle visible.',
+      },
+    },
+    {
+      label: 'CAM-022 lens obscured',
+      values: {
+        camera_id: 'CAM-022',
+        description: 'Image entirely obscured — appears to be vegetation pressed against lens or a leaf. No animal visible. Last good capture 36h ago.',
+      },
+    },
+  ],
 };
 
 // GET /api/ai/samples?feature=<verb>
@@ -666,6 +827,182 @@ router.post('/donor-impact-report', async (req, res) => {
     const out = { snapshot, report: result };
     await record('donor-impact-report', { notes: req.body?.notes || null }, out);
     res.json(out);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// ──────────────────────────────────────────────────────────────────────────
+// Apply pass 7 (full backlog implementation): 5 MECHANICAL AI verbs
+// ──────────────────────────────────────────────────────────────────────────
+
+// 17) POST /api/ai/intel-report-summarize  { report_text, source_label? }
+router.post('/intel-report-summarize', async (req, res) => {
+  try {
+    const { report_text, source_label } = req.body || {};
+    if (!report_text || !String(report_text).trim()) {
+      return res.status(400).json({ error: 'report_text is required' });
+    }
+    const result = await ai.intelReportSummarize(report_text, source_label || '');
+    // Persist
+    try {
+      await pool.query(
+        `INSERT INTO intel_summaries (summary_id, source_text, source_label, structured, confidence, created_by)
+         VALUES ($1, $2, $3, $4, $5, $6)`,
+        [
+          `INT-${Date.now()}`,
+          String(report_text).slice(0, 8000),
+          source_label || null,
+          result || {},
+          result?.overall_confidence || null,
+          req.user?.email || null,
+        ]
+      );
+    } catch (e) { console.warn('[ai] intel persist failed:', e.message); }
+    await record('intel-report-summarize', { source_label }, result);
+    res.json(result);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// 18) POST /api/ai/incident-narrator  { notes, ranger_id?, context? }
+router.post('/incident-narrator', async (req, res) => {
+  try {
+    const { notes, ranger_id, context } = req.body || {};
+    if (!notes || !String(notes).trim()) {
+      return res.status(400).json({ error: 'notes is required' });
+    }
+    const ctx = { ...(context || {}), ranger_id: ranger_id || null };
+    const result = await ai.incidentNarrator(notes, ctx);
+    try {
+      await pool.query(
+        `INSERT INTO incident_drafts (draft_id, source_notes, structured, status, created_by)
+         VALUES ($1, $2, $3, 'draft', $4)`,
+        [
+          `DRF-${Date.now()}`,
+          String(notes).slice(0, 8000),
+          result || {},
+          req.user?.email || ranger_id || null,
+        ]
+      );
+    } catch (e) { console.warn('[ai] incident-draft persist failed:', e.message); }
+    await record('incident-narrator', { ranger_id }, result);
+    res.json(result);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// 19) POST /api/ai/snare-prevalence-forecast  { zone, horizon_days? }
+router.post('/snare-prevalence-forecast', async (req, res) => {
+  try {
+    const { zone, horizon_days } = req.body || {};
+    if (!zone) return res.status(400).json({ error: 'zone is required' });
+    const horizon = Math.max(1, Math.min(parseInt(horizon_days, 10) || 7, 60));
+    const r = await pool.query(
+      `SELECT snare_id, type, found_at, status, notes
+       FROM snare_finds
+       WHERE location ILIKE $1
+       ORDER BY found_at DESC NULLS LAST
+       LIMIT 90`,
+      [`%${zone}%`]
+    );
+    const baseline = r.rows.length;
+    const result = await ai.snarePrevalenceForecast(zone, horizon, r.rows);
+    try {
+      await pool.query(
+        `INSERT INTO snare_forecasts (zone, horizon_days, baseline_count, forecast_json)
+         VALUES ($1, $2, $3, $4)`,
+        [zone, horizon, baseline, result || {}]
+      );
+    } catch (e) { console.warn('[ai] snare forecast persist failed:', e.message); }
+    await record('snare-prevalence-forecast', { zone, horizon_days: horizon, baseline_count: baseline }, result);
+    res.json({ ...result, baseline_count: baseline, history_count: r.rows.length });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// 20) POST /api/ai/multi-patrol-optimize  { horizon?, constraints_notes?, rangers?, zones? }
+//     Engagement-adjacent — wrapped advisory-only by service layer.
+router.post('/multi-patrol-optimize', async (req, res) => {
+  try {
+    const { horizon, constraints_notes, rangers, zones, shifts } = req.body || {};
+    let rangerRows = rangers;
+    let zoneRows = zones;
+    let shiftRows = shifts;
+    if (!rangerRows) {
+      const rr = await pool.query("SELECT ranger_id, name, rank, base, certifications, status FROM rangers WHERE status = 'active' ORDER BY id ASC LIMIT 30");
+      rangerRows = rr.rows;
+    }
+    if (!zoneRows) {
+      const zr = await pool.query("SELECT DISTINCT location FROM snare_finds WHERE location IS NOT NULL ORDER BY location ASC LIMIT 12");
+      zoneRows = zr.rows.map((r) => r.location);
+    }
+    if (!shiftRows) {
+      const sr = await pool.query("SELECT shift_id, ranger_id, sector, start_at, end_at, status FROM ranger_shifts ORDER BY start_at DESC NULLS LAST LIMIT 20");
+      shiftRows = sr.rows;
+    }
+    const veh = await pool.query("SELECT vehicle_id, type, fuel_status, status, location FROM vehicles WHERE status != 'retired' ORDER BY id ASC LIMIT 20");
+    const drn = await pool.query("SELECT drone_id, model, battery_pct, status, location FROM drones WHERE status != 'retired' ORDER BY id ASC LIMIT 20");
+
+    const inputs = {
+      horizon: horizon || 'next_24h',
+      constraints_notes: constraints_notes || '',
+      rangers: rangerRows,
+      zones: zoneRows,
+      shifts: shiftRows,
+      vehicles: veh.rows,
+      drones: drn.rows,
+    };
+    const result = await ai.multiPatrolOptimize(inputs);
+    try {
+      await pool.query(
+        `INSERT INTO patrol_optimizations (optimization_id, horizon, inputs, assignments, advisory_only, requires_ranger_lead_approval, created_by)
+         VALUES ($1, $2, $3, $4, TRUE, TRUE, $5)`,
+        [
+          `OPT-${Date.now()}`,
+          inputs.horizon,
+          { rangers_count: rangerRows.length, zones_count: zoneRows.length, shifts_count: shiftRows.length },
+          result || {},
+          req.user?.email || null,
+        ]
+      );
+    } catch (e) { console.warn('[ai] patrol opt persist failed:', e.message); }
+    await record('multi-patrol-optimize', { horizon: inputs.horizon, rangers: rangerRows.length, zones: zoneRows.length }, result);
+    res.json(result);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// 21) POST /api/ai/camera-trap-image-classify  { camera_id, description, attachment_id? }
+//     Persists classification onto the camera_traps row (denormalized) AND into
+//     camera_classifications. Text-fallback when no vision model is wired.
+router.post('/camera-trap-image-classify', async (req, res) => {
+  try {
+    const { camera_id, description, attachment_id, context } = req.body || {};
+    if (!description || !String(description).trim()) {
+      return res.status(400).json({ error: 'description is required (text-fallback classifier)' });
+    }
+    let camCtx = context || {};
+    if (camera_id) {
+      const cr = await pool.query('SELECT * FROM camera_traps WHERE camera_id = $1 LIMIT 1', [camera_id]);
+      if (cr.rows.length) {
+        camCtx = { ...camCtx, camera: cr.rows[0] };
+      }
+    }
+    const result = await ai.cameraTrapImageClassify(description, camCtx);
+    const confidence = (result && result.primary && typeof result.primary.confidence === 'number') ? result.primary.confidence : null;
+    try {
+      await pool.query(
+        `INSERT INTO camera_classifications (camera_id, attachment_id, description, classification, confidence)
+         VALUES ($1, $2, $3, $4, $5)`,
+        [camera_id || null, attachment_id || null, String(description).slice(0, 4000), result || {}, confidence]
+      );
+    } catch (e) { console.warn('[ai] classification persist failed:', e.message); }
+    if (camera_id) {
+      try {
+        await pool.query(
+          `UPDATE camera_traps SET classification_json = $1, classification_at = NOW(), updated_at = NOW()
+           WHERE camera_id = $2`,
+          [result || {}, camera_id]
+        );
+      } catch (e) { console.warn('[ai] camera_traps denormalize failed:', e.message); }
+    }
+    await record('camera-trap-image-classify', { camera_id, attachment_id }, result);
+    res.json(result);
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
