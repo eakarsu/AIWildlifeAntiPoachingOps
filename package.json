@@ -7,7 +7,6 @@
     "start": "bash start.sh",
     "backend": "cd backend && npm start",
     "frontend": "cd frontend && npm start",
-    "seed": "cd backend && node seed/seed.js",
     "install-all": "npm install && cd backend && npm install && cd ../frontend && npm install"
   }
 }

@@ -1,85 +1,66 @@
 const express = require('express');
-const router = express.Router();
+const crypto = require('node:crypto');
 const jwt = require('jsonwebtoken');
-const { JWT_SECRET, authenticateToken } = require('../middleware/auth');
+const { JWT_SECRET, authenticateToken, requireCommander } = require('../middleware/auth');
 const pool = require('../config/database');
 
-// Fallback demo commander used when the users table is unavailable
-// (e.g. before the v2 migration is applied). Never overwritten anywhere.
-const DEMO_USER = {
-  id: 1,
-  email: 'admin@antipoach.io',
-  password: 'admin123',
-  name: 'Admin',
-  role: 'admin',
-};
+const router = express.Router();
+const SCRYPT_FORMAT = /^scrypt\$([a-f0-9]{32})\$([a-f0-9]{64}|[a-f0-9]{128})$/;
 
-async function findDbUser(email, password) {
-  try {
-    const r = await pool.query(
-      'SELECT id, email, password, name, role FROM users WHERE email = $1 LIMIT 1',
-      [email]
-    );
-    if (!r.rows.length) return null;
-    const u = r.rows[0];
-    if (u.password !== password) return null;
-    return { id: u.id, email: u.email, name: u.name, role: u.role };
-  } catch (e) {
-    return null;
-  }
+function verifyPassword(password, stored) {
+  const match = SCRYPT_FORMAT.exec(String(stored || ''));
+  if (!match) return Promise.resolve(false);
+  return new Promise((resolve, reject) => {
+    const expected = Buffer.from(match[2], 'hex');
+    crypto.scrypt(String(password), Buffer.from(match[1], 'hex'), expected.length, (error, derived) => {
+      if (error) return reject(error);
+      resolve(crypto.timingSafeEqual(derived, expected));
+    });
+  });
 }
 
-// POST /api/auth/login
 router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body || {};
-    if (!email || !password) {
-      return res.status(400).json({ error: 'email and password are required' });
+    if (!email || !password) return res.status(400).json({ error: 'email and password are required' });
+    const result = await pool.query(
+      'SELECT id, email, password, name, role FROM users WHERE lower(email) = $1 LIMIT 1',
+      [String(email).trim().toLowerCase()]
+    );
+    if (!result.rows.length) return res.status(401).json({ error: 'Invalid email or password' });
+    const account = result.rows[0];
+    if (!SCRYPT_FORMAT.test(String(account.password || ''))) {
+      return res.status(503).json({ error: 'PASSWORD_MIGRATION_REQUIRED' });
     }
-
-    let user = await findDbUser(email, password);
-
-    if (!user) {
-      // Hardcoded demo commander still works even if users table missing
-      if (email === DEMO_USER.email && password === DEMO_USER.password) {
-        user = {
-          id: DEMO_USER.id,
-          email: DEMO_USER.email,
-          name: DEMO_USER.name,
-          role: DEMO_USER.role,
-        };
-      }
-    }
-
-    if (!user) {
+    if (!await verifyPassword(password, account.password)) {
       return res.status(401).json({ error: 'Invalid email or password' });
     }
-
+    const user = { id: account.id, email: account.email, name: account.name, role: account.role };
     const token = jwt.sign(user, JWT_SECRET, { expiresIn: '24h' });
-    res.json({ token, user });
-  } catch (e) {
-    console.error('Login error:', e);
-    res.status(500).json({ error: 'Server error' });
+    return res.json({ token, user });
+  } catch (error) {
+    console.error('Login error:', error.message);
+    return res.status(503).json({ error: 'Authentication service unavailable' });
   }
 });
 
-// GET /api/auth/me
-router.get('/me', authenticateToken, (req, res) => {
-  res.json({
-    id: req.user.id,
-    email: req.user.email,
-    name: req.user.name,
-    role: req.user.role,
-  });
+router.get('/me', authenticateToken, async (req, res) => {
+  try {
+    const result = await pool.query('SELECT id, email, name, role FROM users WHERE id = $1 LIMIT 1', [req.user.id]);
+    if (!result.rows.length) return res.status(401).json({ error: 'Account no longer exists' });
+    return res.json(result.rows[0]);
+  } catch (error) {
+    return res.status(503).json({ error: 'Authentication service unavailable' });
+  }
 });
 
-// GET /api/auth/users  (commander only)
-const { requireCommander } = require('../middleware/auth');
-router.get('/users', authenticateToken, requireCommander, async (req, res) => {
+router.get('/users', authenticateToken, requireCommander, async (_req, res) => {
   try {
-    const r = await pool.query('SELECT id, email, name, role, created_at FROM users ORDER BY id ASC');
-    res.json(r.rows);
-  } catch (e) { res.status(500).json({ error: e.message }); }
+    const result = await pool.query('SELECT id, email, name, role, created_at FROM users ORDER BY id ASC');
+    return res.json(result.rows);
+  } catch (error) {
+    return res.status(500).json({ error: 'Unable to list users' });
+  }
 });
 
 module.exports = router;

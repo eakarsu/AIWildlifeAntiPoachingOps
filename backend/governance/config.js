@@ -1,0 +1,29 @@
+module.exports={
+  caseType:'approved_anti_poaching_response',initialState:'report_registered',
+  states:['report_registered','consent_and_redaction_verified','intelligence_reconciled','risk_assessed','patrol_plan_proposed','commander_review','response_approved','dispatch_observed','response_failed','offline_pending','recovery_verified','outcome_reconciled','closed'],
+  createRoles:['conservation_analyst','incident_commander'],assessmentRoles:['conservation_analyst','wildlife_safety_reviewer','incident_commander'],auditRoles:['incident_commander','privacy_officer','auditor'],connectorRoles:['integration_operator','incident_commander'],
+  evidenceKinds:['report_manifest','consent_record','redaction_receipt','restricted_location_snapshot','camera_trap_snapshot','drone_authorization','gis_version','ranger_availability','threat_assessment','safety_constraint_manifest','patrol_plan','commander_approval','dispatch_receipt','offline_receipt','failure_record','recovery_record','outcome_report'],
+  requiredSignals:['sourceVersion','policyVersion','consentVerified','piiRedacted','locationPrecisionRestricted','telemetryFreshnessSeconds','threatConfidence','constraintViolations','p95LatencyMs','offlineStatus','safetyLimitsVerified','outcomeVersion'],
+  professionalBoundary:'Risk assessment remains advisory to authorized conservation commanders. The API never exposes sensitive wildlife locations, launches drones, dispatches rangers, or contacts enforcement.',
+  connectors:[{name:'ranger_management',purpose:'availability and approved patrol receipts'},{name:'camera_trap',purpose:'versioned observation manifests'},{name:'drone_operations',purpose:'authorization and flight receipts only'},{name:'gis',purpose:'restricted location geometry versions'},{name:'telemetry',purpose:'timestamped sensor observations'},{name:'case_registry',purpose:'incident and evidence reconciliation'},{name:'secure_messaging',purpose:'approved alert delivery receipts'},{name:'weather',purpose:'timestamped operating conditions'},{name:'maintenance',purpose:'vehicle and equipment readiness'}],
+  transitions:[
+    {from:'report_registered',action:'verify_consent_and_redaction',to:'consent_and_redaction_verified',roles:['privacy_officer','conservation_analyst'],requiresEvidence:true},
+    {from:'consent_and_redaction_verified',action:'reconcile_intelligence',to:'intelligence_reconciled',roles:['conservation_analyst','integration_operator'],requiresEvidence:true},
+    {from:'intelligence_reconciled',action:'record_risk_assessment',to:'risk_assessed',roles:['conservation_analyst','wildlife_safety_reviewer'],requiresEvidence:true},
+    {from:'risk_assessed',action:'propose_patrol_plan',to:'patrol_plan_proposed',roles:['conservation_analyst'],requiresEvidence:true},
+    {from:'patrol_plan_proposed',action:'submit_commander_review',to:'commander_review',roles:['wildlife_safety_reviewer'],requiresEvidence:true,dualControl:true},
+    {from:'commander_review',action:'approve_response_observation',to:'response_approved',roles:['incident_commander','wildlife_safety_reviewer'],requiresEvidence:true,dualControl:true},
+    {from:'response_approved',action:'record_dispatch_receipt',to:'dispatch_observed',roles:['integration_operator','incident_commander'],requiresEvidence:true},
+    {from:'response_approved',action:'record_response_failure',to:'response_failed',roles:['integration_operator','incident_commander'],requiresEvidence:true},
+    {from:'response_approved',action:'record_offline_pending',to:'offline_pending',roles:['integration_operator'],requiresEvidence:true},
+    {from:'response_failed',action:'verify_recovery',to:'recovery_verified',roles:['wildlife_safety_reviewer','incident_commander'],requiresEvidence:true,dualControl:true},
+    {from:'offline_pending',action:'verify_recovery',to:'recovery_verified',roles:['wildlife_safety_reviewer','incident_commander'],requiresEvidence:true,dualControl:true},
+    {from:'dispatch_observed',action:'reconcile_outcome',to:'outcome_reconciled',roles:['conservation_analyst','incident_commander'],requiresEvidence:true,dualControl:true},
+    {from:'recovery_verified',action:'reconcile_outcome',to:'outcome_reconciled',roles:['conservation_analyst','incident_commander'],requiresEvidence:true,dualControl:true},
+    {from:'outcome_reconciled',action:'close_response',to:'closed',roles:['incident_commander','auditor'],requiresEvidence:true}
+  ],
+  acceptedFixture:{sourceVersion:'src1',policyVersion:'p1',consentVerified:true,piiRedacted:true,locationPrecisionRestricted:true,telemetryFreshnessSeconds:30,threatConfidence:0.91,constraintViolations:0,p95LatencyMs:800,offlineStatus:'reconciled',safetyLimitsVerified:true,outcomeVersion:'o1'},
+  rejectedFixture:{sourceVersion:'src1',policyVersion:'p1',consentVerified:true,piiRedacted:true,locationPrecisionRestricted:false,telemetryFreshnessSeconds:30,threatConfidence:0.91,constraintViolations:0,p95LatencyMs:800,offlineStatus:'reconciled',safetyLimitsVerified:true,outcomeVersion:'o1'},
+  readyDisposition:'independent_commander_review_required',holdDisposition:'privacy_safety_freshness_or_offline_hold',decisionField:'rangerDispatchCommand',
+  assess:x=>{const freshness=Number(x.telemetryFreshnessSeconds),confidence=Number(x.threatConfidence),violations=Number(x.constraintViolations),latency=Number(x.p95LatencyMs);const ready=x.consentVerified===true&&x.piiRedacted===true&&x.locationPrecisionRestricted===true&&x.safetyLimitsVerified===true&&freshness<=120&&confidence>=0.8&&violations===0&&latency<=1500&&x.offlineStatus==='reconciled';return{disposition:ready?'independent_commander_review_required':'privacy_safety_freshness_or_offline_hold',rangerDispatchCommand:null,droneLaunchCommand:null,metrics:{freshness,confidence,violations,latency},versions:{source:x.sourceVersion,policy:x.policyVersion,outcome:x.outcomeVersion}};}
+};

@@ -3,8 +3,10 @@
   "version": "1.0.0",
   "main": "server.js",
   "scripts": {
-    "start": "nodemon server.js",
-    "seed": "node seed/seed.js"
+    "start": "node server.js",
+    "test": "node --test governance/*.test.cjs",
+    "seed": "node seed/seed.js",
+    "create-admin": "node scripts/create-admin.js"
   },
   "dependencies": {
     "cors": "^2.8.5",

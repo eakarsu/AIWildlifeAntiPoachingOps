@@ -1,6 +1,6 @@
 const API_BASE =
   (typeof window !== 'undefined' && window.__API_BASE__) ||
-  'http://localhost:3077/api';
+  process.env.REACT_APP_API_URL || '/api';
 
 export { API_BASE };
 
