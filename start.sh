@@ -2,6 +2,9 @@
 set -euo pipefail
 
 project_dir="$(cd "$(dirname "$0")" && pwd)"
+set -a
+source "$project_dir/.env"
+set +a
 if [[ "${NODE_ENV:-}" == "test" && -n "${RUNTIME_PROJECT_SOURCE:-}" && -d "${RUNTIME_PROJECT_SOURCE:-}" ]]; then
   project_dir="$(cd "$RUNTIME_PROJECT_SOURCE" && pwd)"
 fi
