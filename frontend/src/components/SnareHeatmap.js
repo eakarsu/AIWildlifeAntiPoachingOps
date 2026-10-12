@@ -2,20 +2,16 @@ import React, { useEffect, useState } from 'react';
 import {
   ScatterChart, Scatter, XAxis, YAxis, ZAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts';
-import { getToken } from '../services/api';
+import { getCustomView } from '../services/api';
 
 export default function SnareHeatmap() {
   const [data, setData] = useState(null);
   const [err, setErr] = useState(null);
 
   useEffect(() => {
-    const token = getToken();
-    fetch('http://localhost:3077/api/custom-views/snare-heatmap', {
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-    })
-      .then((r) => r.json())
+    getCustomView('snare-heatmap')
       .then((d) => {
-        if (d.error) throw new Error(d.error);
+        if (!d || typeof d !== 'object' || Array.isArray(d) || !Array.isArray(d.points) || !Array.isArray(d.locations)) throw new Error('Invalid tactical view data.');
         setData(d);
       })
       .catch((e) => setErr(e.message));

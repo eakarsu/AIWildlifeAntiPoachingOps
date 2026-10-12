@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { MapContainer, TileLayer, CircleMarker, Tooltip, LayersControl, LayerGroup } from 'react-leaflet';
-import { getToken } from '../services/api';
+import { getCustomView } from '../services/api';
 
 const { BaseLayer, Overlay } = LayersControl;
 
@@ -9,13 +9,9 @@ export default function ParkMap() {
   const [err, setErr] = useState(null);
 
   useEffect(() => {
-    const token = getToken();
-    fetch('http://localhost:3077/api/custom-views/park-map', {
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-    })
-      .then((r) => r.json())
+    getCustomView('park-map')
       .then((d) => {
-        if (d.error) throw new Error(d.error);
+        if (!d || typeof d !== 'object' || Array.isArray(d) || !['camera_traps', 'poacher_incidents', 'ranger_shifts'].every(key => Array.isArray(d[key])) || !d.center) throw new Error('Invalid tactical view data.');
         setData(d);
       })
       .catch((e) => setErr(e.message));

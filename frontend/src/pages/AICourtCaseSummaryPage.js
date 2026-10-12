@@ -11,7 +11,7 @@ export default function AICourtCaseSummaryPage() {
       inputs={[
         { key: 'case_id', label: 'Case ID', placeholder: 'e.g. CC-2026-0002' },
       ]}
-      run={(v) => aiCourtCaseSummary({ case_id: v.case_id })}
+      run={(v, requestOptions) => aiCourtCaseSummary({ case_id: v.case_id }, requestOptions)}
     />
   );
 }

@@ -12,7 +12,7 @@ export default function AIMultiPatrolOptimizePage() {
         { key: 'horizon',            label: 'Horizon',            type: 'text',     placeholder: 'e.g. next_24h, next_12h, next_72h' },
         { key: 'constraints_notes',  label: 'Constraint Notes',   type: 'textarea', placeholder: 'Available rangers, vehicles, fuel state, K9 / drone overwatch availability, zone priority.' },
       ]}
-      run={(v) => aiMultiPatrolOptimize({ horizon: v.horizon, constraints_notes: v.constraints_notes })}
+      run={(v, requestOptions) => aiMultiPatrolOptimize({ horizon: v.horizon, constraints_notes: v.constraints_notes }, requestOptions)}
     />
   );
 }

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { getToken } from '../services/api';
+import { getCustomView } from '../services/api';
 
 const DOW = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
@@ -18,13 +18,9 @@ export default function PatrolCalendar() {
   const [err, setErr] = useState(null);
 
   useEffect(() => {
-    const token = getToken();
-    fetch('http://localhost:3077/api/custom-views/patrol-calendar', {
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-    })
-      .then((r) => r.json())
+    getCustomView('patrol-calendar')
       .then((d) => {
-        if (d.error) throw new Error(d.error);
+        if (!d || typeof d !== 'object' || Array.isArray(d) || !Array.isArray(d.days)) throw new Error('Invalid tactical view data.');
         setData(d);
       })
       .catch((e) => setErr(e.message));

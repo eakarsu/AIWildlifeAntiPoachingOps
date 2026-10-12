@@ -11,7 +11,7 @@ export default function AIDonorImpactPage() {
       inputs={[
         { key: 'donor_notes', label: 'Donor Context', type: 'textarea', placeholder: 'Optional: donor name, focus species, prior commitments to highlight.' },
       ]}
-      run={(v) => aiDonorImpact({ donor_context: { notes: v.donor_notes } })}
+      run={(v, requestOptions) => aiDonorImpact({ donor_context: { notes: v.donor_notes } }, requestOptions)}
     />
   );
 }

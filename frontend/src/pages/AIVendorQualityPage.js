@@ -11,7 +11,7 @@ export default function AIVendorQualityPage() {
       inputs={[
         { key: 'vendor_notes', label: 'Vendor', type: 'textarea', placeholder: 'Vendor name, what they supply, observed field performance, prior issues.' },
       ]}
-      run={(v) => aiVendorQuality({ vendor: { notes: v.vendor_notes } })}
+      run={(v, requestOptions) => aiVendorQuality({ vendor: { notes: v.vendor_notes } }, requestOptions)}
     />
   );
 }

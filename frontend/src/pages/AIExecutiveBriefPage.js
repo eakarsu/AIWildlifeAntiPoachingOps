@@ -11,7 +11,7 @@ export default function AIExecutiveBriefPage() {
       inputs={[
         { key: 'notes', label: 'Bias / focus notes', type: 'textarea', placeholder: 'Optional: focus on a species, region or donor lens.' },
       ]}
-      run={(v) => aiExecutiveBrief({ notes: v.notes })}
+      run={(v, requestOptions) => aiExecutiveBrief({ notes: v.notes }, requestOptions)}
     />
   );
 }

@@ -29,6 +29,7 @@ app.use('/api/auth', require('./routes/auth'));
 app.use('/api/governance', require('./governance/router'));
 
 app.use('/api', authenticateToken);
+app.get('/api/ai-readiness', (_req, res) => res.json(require('./governance/aiReadiness').aiReadiness()));
 const protectedRoutes = [
   ['/api/rangers','./routes/rangers'],['/api/patrols','./routes/patrols'],
   ['/api/camera-traps','./routes/cameraTraps'],['/api/snare-finds','./routes/snareFinds'],

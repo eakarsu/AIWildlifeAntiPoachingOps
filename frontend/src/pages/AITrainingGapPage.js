@@ -9,7 +9,7 @@ export default function AITrainingGapPage() {
       feature="training-gap-analysis"
       subtitle="Roster-wide analysis of skill shortfalls and expiring certifications."
       inputs={[]}
-      run={() => aiTrainingGap({})}
+      run={(_values, requestOptions) => aiTrainingGap({}, requestOptions)}
     />
   );
 }

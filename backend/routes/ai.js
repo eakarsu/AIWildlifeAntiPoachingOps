@@ -1,18 +1,15 @@
 const express = require('express');
 const router = express.Router();
-const pool = require('../config/database');
+const nativePool = require('../config/database');
+const { createAIRequestScope } = require('../services/aiRequestScope');
+const scope = createAIRequestScope(nativePool);
+const pool = { query: scope.query };
+const postAI = (path, handler) => router.post(path, scope.wrap(handler));
 const ai = require('../services/ai');
 
 // Persist every AI result so the frontend history viewer can show it later.
 async function record(feature, input, output) {
-  try {
-    await pool.query(
-      'INSERT INTO ai_results (feature, input, output) VALUES ($1, $2, $3)',
-      [feature, input || {}, output || {}]
-    );
-  } catch (e) {
-    console.warn(`[ai] failed to record ${feature}:`, e.message);
-  }
+  await pool.query('INSERT INTO ai_results (feature, input, output) VALUES ($1, $2, $3)', [feature, input ?? {}, output ?? {}]);
 }
 
 // ──────────────────────────────────────────────────────────────
@@ -568,8 +565,9 @@ router.get('/samples', (req, res) => {
 // GET /api/ai/history?feature=<name>&limit=<n>
 router.get('/history', async (req, res) => {
   try {
+    await scope.freshActor(req);
     const feature = (req.query.feature || '').toString();
-    const limit = Math.min(parseInt(req.query.limit, 10) || 25, 200);
+    const limit = Math.max(1, Math.min(parseInt(req.query.limit, 10) || 25, 200));
     let r;
     if (feature) {
       r = await pool.query(
@@ -583,16 +581,15 @@ router.get('/history', async (req, res) => {
       );
     }
     res.json(r.rows);
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { res.status(e.status || 503).json({ error: e.status ? e.message : 'Saved AI history could not be loaded. Please retry.' }); }
 });
 
 // 1) POST /api/ai/species-id-from-image  { description?, context? }
-router.post('/species-id-from-image', async (req, res) => {
+postAI('/species-id-from-image', async (req, res) => {
   try {
     const { description, context } = req.body || {};
-    const desc = description && String(description).trim().length > 0
-      ? description
-      : 'No image provided — return best-guess from generic camera-trap description.';
+    if (typeof description !== 'string' || !description.trim()) return res.status(400).json({ error: 'description is required' });
+    const desc = description;
     const result = await ai.speciesIdFromImage(desc, context || {});
     await record('species-id-from-image', { description: desc, context }, result);
     res.json(result);
@@ -600,7 +597,7 @@ router.post('/species-id-from-image', async (req, res) => {
 });
 
 // 2) POST /api/ai/patrol-dispatch  { objective, context? }
-router.post('/patrol-dispatch', async (req, res) => {
+postAI('/patrol-dispatch', async (req, res) => {
   try {
     const { objective, context } = req.body || {};
     if (!objective) return res.status(400).json({ error: 'objective is required' });
@@ -611,7 +608,7 @@ router.post('/patrol-dispatch', async (req, res) => {
 });
 
 // 3) POST /api/ai/hot-zone-predict  { region }
-router.post('/hot-zone-predict', async (req, res) => {
+postAI('/hot-zone-predict', async (req, res) => {
   try {
     const { region } = req.body || {};
     if (!region) return res.status(400).json({ error: 'region is required' });
@@ -628,7 +625,7 @@ router.post('/hot-zone-predict', async (req, res) => {
 });
 
 // 4) POST /api/ai/snare-density-heatmap
-router.post('/snare-density-heatmap', async (req, res) => {
+postAI('/snare-density-heatmap', async (req, res) => {
   try {
     let snares = req.body?.snares;
     if (!snares) {
@@ -642,21 +639,21 @@ router.post('/snare-density-heatmap', async (req, res) => {
 });
 
 // 5) POST /api/ai/poacher-pattern-analyze
-router.post('/poacher-pattern-analyze', async (req, res) => {
+postAI('/poacher-pattern-analyze', async (req, res) => {
   try {
     let incidents = req.body?.incidents;
     if (!incidents) {
       const r = await pool.query("SELECT * FROM poacher_incidents ORDER BY opened_at DESC LIMIT 60");
       incidents = r.rows;
     }
-    const result = await ai.poacherPatternAnalyze(incidents);
+    const result = await ai.poacherPatternAnalyze(incidents, req.body?.extra_notes ?? '');
     await record('poacher-pattern-analyze', { count: incidents.length, notes: req.body?.extra_notes || null }, result);
     res.json(result);
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 // 6) POST /api/ai/executive-brief
-router.post('/executive-brief', async (req, res) => {
+postAI('/executive-brief', async (req, res) => {
   try {
     const [rangers, patrols, inc, snares, cases] = await Promise.all([
       pool.query("SELECT COUNT(*) FILTER (WHERE status='active') AS active, COUNT(*) FILTER (WHERE status='on_leave') AS on_leave, COUNT(*) AS total FROM rangers"),
@@ -681,7 +678,7 @@ router.post('/executive-brief', async (req, res) => {
 });
 
 // 7) POST /api/ai/ranger-safety-brief  { sector }
-router.post('/ranger-safety-brief', async (req, res) => {
+postAI('/ranger-safety-brief', async (req, res) => {
   try {
     const { sector, context } = req.body || {};
     if (!sector) return res.status(400).json({ error: 'sector is required' });
@@ -700,7 +697,7 @@ router.post('/ranger-safety-brief', async (req, res) => {
 });
 
 // 8) POST /api/ai/court-case-summary  { case_id }
-router.post('/court-case-summary', async (req, res) => {
+postAI('/court-case-summary', async (req, res) => {
   try {
     const { case_id, evidence } = req.body || {};
     if (!case_id) return res.status(400).json({ error: 'case_id is required' });
@@ -715,7 +712,7 @@ router.post('/court-case-summary', async (req, res) => {
 });
 
 // 9) POST /api/ai/drone-flight-plan  { objective, params? }
-router.post('/drone-flight-plan', async (req, res) => {
+postAI('/drone-flight-plan', async (req, res) => {
   try {
     const { objective, params } = req.body || {};
     if (!objective) return res.status(400).json({ error: 'objective is required' });
@@ -726,7 +723,7 @@ router.post('/drone-flight-plan', async (req, res) => {
 });
 
 // 10) POST /api/ai/vehicle-routing  { origin, destination, constraints? }
-router.post('/vehicle-routing', async (req, res) => {
+postAI('/vehicle-routing', async (req, res) => {
   try {
     const { origin, destination, constraints } = req.body || {};
     if (!origin || !destination) {
@@ -739,7 +736,7 @@ router.post('/vehicle-routing', async (req, res) => {
 });
 
 // 11) POST /api/ai/training-gap-analysis
-router.post('/training-gap-analysis', async (req, res) => {
+postAI('/training-gap-analysis', async (req, res) => {
   try {
     let rosterContext = req.body?.context;
     if (!rosterContext) {
@@ -756,7 +753,7 @@ router.post('/training-gap-analysis', async (req, res) => {
 });
 
 // 12) POST /api/ai/communication-plan  { scenario, context? }
-router.post('/communication-plan', async (req, res) => {
+postAI('/communication-plan', async (req, res) => {
   try {
     const { scenario, context } = req.body || {};
     if (!scenario) return res.status(400).json({ error: 'scenario is required' });
@@ -767,7 +764,7 @@ router.post('/communication-plan', async (req, res) => {
 });
 
 // 13) POST /api/ai/weather-impact-patrol  { forecast, planned_patrols? }
-router.post('/weather-impact-patrol', async (req, res) => {
+postAI('/weather-impact-patrol', async (req, res) => {
   try {
     const { forecast, planned_patrols } = req.body || {};
     if (!forecast) return res.status(400).json({ error: 'forecast is required' });
@@ -783,7 +780,7 @@ router.post('/weather-impact-patrol', async (req, res) => {
 });
 
 // 14) POST /api/ai/supply-resupply-plan
-router.post('/supply-resupply-plan', async (req, res) => {
+postAI('/supply-resupply-plan', async (req, res) => {
   try {
     let supplies = req.body?.supplies;
     if (!supplies) {
@@ -797,7 +794,7 @@ router.post('/supply-resupply-plan', async (req, res) => {
 });
 
 // 15) POST /api/ai/vendor-quality-score  { vendor, perf_hints? }
-router.post('/vendor-quality-score', async (req, res) => {
+postAI('/vendor-quality-score', async (req, res) => {
   try {
     const { vendor, perf_hints } = req.body || {};
     if (!vendor) return res.status(400).json({ error: 'vendor is required' });
@@ -808,7 +805,7 @@ router.post('/vendor-quality-score', async (req, res) => {
 });
 
 // 16) POST /api/ai/donor-impact-report
-router.post('/donor-impact-report', async (req, res) => {
+postAI('/donor-impact-report', async (req, res) => {
   try {
     const [snares, patrols, cases, sightings] = await Promise.all([
       pool.query("SELECT COUNT(*) AS total FROM snare_finds"),
@@ -825,7 +822,7 @@ router.post('/donor-impact-report', async (req, res) => {
     };
     const result = await ai.donorImpactReport(snapshot, req.body?.donor_context || {});
     const out = { snapshot, report: result };
-    await record('donor-impact-report', { notes: req.body?.notes || null }, out);
+    await record('donor-impact-report', { notes: req.body?.notes ?? null, donor_context: req.body?.donor_context ?? {} }, out);
     res.json(out);
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -835,7 +832,7 @@ router.post('/donor-impact-report', async (req, res) => {
 // ──────────────────────────────────────────────────────────────────────────
 
 // 17) POST /api/ai/intel-report-summarize  { report_text, source_label? }
-router.post('/intel-report-summarize', async (req, res) => {
+postAI('/intel-report-summarize', async (req, res) => {
   try {
     const { report_text, source_label } = req.body || {};
     if (!report_text || !String(report_text).trim()) {
@@ -857,19 +854,23 @@ router.post('/intel-report-summarize', async (req, res) => {
         ]
       );
     } catch (e) { console.warn('[ai] intel persist failed:', e.message); }
-    await record('intel-report-summarize', { source_label }, result);
+    await record('intel-report-summarize', { report_text, source_label }, result);
     res.json(result);
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 // 18) POST /api/ai/incident-narrator  { notes, ranger_id?, context? }
-router.post('/incident-narrator', async (req, res) => {
+postAI('/incident-narrator', async (req, res) => {
   try {
     const { notes, ranger_id, context } = req.body || {};
     if (!notes || !String(notes).trim()) {
       return res.status(400).json({ error: 'notes is required' });
     }
-    const ctx = { ...(context || {}), ranger_id: ranger_id || null };
+    if (ranger_id) {
+      const ranger = await pool.query('SELECT ranger_id FROM rangers WHERE ranger_id=$1', [ranger_id]);
+      if (!ranger.rows.length) return res.status(404).json({ error: 'The selected ranger is no longer available.' });
+    }
+    const ctx = { ...(context || {}), ranger_id: ranger_id ?? null };
     const result = await ai.incidentNarrator(notes, ctx);
     try {
       await pool.query(
@@ -883,17 +884,18 @@ router.post('/incident-narrator', async (req, res) => {
         ]
       );
     } catch (e) { console.warn('[ai] incident-draft persist failed:', e.message); }
-    await record('incident-narrator', { ranger_id }, result);
+    await record('incident-narrator', { notes, ranger_id, context }, result);
     res.json(result);
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 // 19) POST /api/ai/snare-prevalence-forecast  { zone, horizon_days? }
-router.post('/snare-prevalence-forecast', async (req, res) => {
+postAI('/snare-prevalence-forecast', async (req, res) => {
   try {
     const { zone, horizon_days } = req.body || {};
     if (!zone) return res.status(400).json({ error: 'zone is required' });
-    const horizon = Math.max(1, Math.min(parseInt(horizon_days, 10) || 7, 60));
+    const horizon = horizon_days === undefined || horizon_days === null || horizon_days === '' ? 7 : Number(horizon_days);
+    if (!Number.isInteger(horizon) || horizon < 1 || horizon > 60) return res.status(400).json({ error: 'horizon_days must be an integer from 1 to 60' });
     const r = await pool.query(
       `SELECT snare_id, type, found_at, status, notes
        FROM snare_finds
@@ -918,7 +920,7 @@ router.post('/snare-prevalence-forecast', async (req, res) => {
 
 // 20) POST /api/ai/multi-patrol-optimize  { horizon?, constraints_notes?, rangers?, zones? }
 //     Engagement-adjacent — wrapped advisory-only by service layer.
-router.post('/multi-patrol-optimize', async (req, res) => {
+postAI('/multi-patrol-optimize', async (req, res) => {
   try {
     const { horizon, constraints_notes, rangers, zones, shifts } = req.body || {};
     let rangerRows = rangers;
@@ -962,7 +964,7 @@ router.post('/multi-patrol-optimize', async (req, res) => {
         ]
       );
     } catch (e) { console.warn('[ai] patrol opt persist failed:', e.message); }
-    await record('multi-patrol-optimize', { horizon: inputs.horizon, rangers: rangerRows.length, zones: zoneRows.length }, result);
+    await record('multi-patrol-optimize', { ...inputs }, result);
     res.json(result);
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -970,7 +972,7 @@ router.post('/multi-patrol-optimize', async (req, res) => {
 // 21) POST /api/ai/camera-trap-image-classify  { camera_id, description, attachment_id? }
 //     Persists classification onto the camera_traps row (denormalized) AND into
 //     camera_classifications. Text-fallback when no vision model is wired.
-router.post('/camera-trap-image-classify', async (req, res) => {
+postAI('/camera-trap-image-classify', async (req, res) => {
   try {
     const { camera_id, description, attachment_id, context } = req.body || {};
     if (!description || !String(description).trim()) {
@@ -979,9 +981,14 @@ router.post('/camera-trap-image-classify', async (req, res) => {
     let camCtx = context || {};
     if (camera_id) {
       const cr = await pool.query('SELECT * FROM camera_traps WHERE camera_id = $1 LIMIT 1', [camera_id]);
-      if (cr.rows.length) {
-        camCtx = { ...camCtx, camera: cr.rows[0] };
-      }
+      if (!cr.rows.length) return res.status(404).json({ error: 'The selected camera is no longer available.' });
+      camCtx = { ...camCtx, camera: cr.rows[0] };
+    }
+    if (attachment_id !== undefined && attachment_id !== null) {
+      if (!camera_id || !Number.isInteger(Number(attachment_id)) || Number(attachment_id) < 1) return res.status(400).json({ error: 'Select a saved camera and its uploaded image.' });
+      const attachment = (await pool.query('SELECT id,resource_type,resource_id,original_name,mimetype,size_bytes FROM attachments WHERE id=$1', [attachment_id])).rows[0];
+      if (!attachment || attachment.resource_type !== 'camera_traps' || Number(attachment.resource_id) !== Number(camCtx.camera.id) || !/^image\//.test(attachment.mimetype || '')) return res.status(400).json({ error: 'The uploaded image must belong to the selected camera.' });
+      camCtx = { ...camCtx, attachment, classification_mode: 'description_and_saved_metadata_only' };
     }
     const result = await ai.cameraTrapImageClassify(description, camCtx);
     const confidence = (result && result.primary && typeof result.primary.confidence === 'number') ? result.primary.confidence : null;
@@ -1001,7 +1008,7 @@ router.post('/camera-trap-image-classify', async (req, res) => {
         );
       } catch (e) { console.warn('[ai] camera_traps denormalize failed:', e.message); }
     }
-    await record('camera-trap-image-classify', { camera_id, attachment_id }, result);
+    await record('camera-trap-image-classify', { camera_id, attachment_id, description, context }, result);
     res.json(result);
   } catch (e) { res.status(500).json({ error: e.message }); }
 });

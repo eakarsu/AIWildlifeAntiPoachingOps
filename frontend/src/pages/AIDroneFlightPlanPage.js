@@ -12,7 +12,7 @@ export default function AIDroneFlightPlanPage() {
         { key: 'objective',    label: 'Mission Objective', type: 'textarea', placeholder: 'e.g. Thermal overwatch of Kabini eastern fence stretch from 03:30 to 05:30...' },
         { key: 'params_notes', label: 'Drone & Conditions', type: 'textarea', placeholder: 'Drone ID, starting battery, wind, ambient temp, special constraints.' },
       ]}
-      run={(v) => aiDroneFlightPlan({ objective: v.objective, params: { notes: v.params_notes } })}
+      run={(v, requestOptions) => aiDroneFlightPlan({ objective: v.objective, params: { notes: v.params_notes } }, requestOptions)}
     />
   );
 }

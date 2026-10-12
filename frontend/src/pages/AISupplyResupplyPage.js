@@ -11,7 +11,7 @@ export default function AISupplyResupplyPage() {
       inputs={[
         { key: 'hints_notes', label: 'Demand Hints', type: 'textarea', placeholder: 'Optional: known surges, base-specific demand, supplier constraints.' },
       ]}
-      run={(v) => aiSupplyResupply({ demand_hints: { notes: v.hints_notes } })}
+      run={(v, requestOptions) => aiSupplyResupply({ demand_hints: { notes: v.hints_notes } }, requestOptions)}
     />
   );
 }

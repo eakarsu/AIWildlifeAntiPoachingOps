@@ -3,6 +3,7 @@ const crypto = require('node:crypto');
 const jwt = require('jsonwebtoken');
 const { JWT_SECRET, authenticateToken, requireCommander } = require('../middleware/auth');
 const pool = require('../config/database');
+const { localDemoCredentials } = require('../governance/demoLogin');
 
 const router = express.Router();
 const SCRYPT_FORMAT = /^scrypt\$([a-f0-9]{32})\$([a-f0-9]{64}|[a-f0-9]{128})$/;
@@ -19,9 +20,8 @@ function verifyPassword(password, stored) {
   });
 }
 
-router.post('/login', async (req, res) => {
+async function authenticate(email, password, res) {
   try {
-    const { email, password } = req.body || {};
     if (!email || !password) return res.status(400).json({ error: 'email and password are required' });
     const result = await pool.query(
       'SELECT id, email, password, name, role FROM users WHERE lower(email) = $1 LIMIT 1',
@@ -41,6 +41,20 @@ router.post('/login', async (req, res) => {
   } catch (error) {
     console.error('Login error:', error.message);
     return res.status(503).json({ error: 'Authentication service unavailable' });
+  }
+}
+
+router.post('/login', (req, res) => {
+  const { email, password } = req.body || {};
+  return authenticate(email, password, res);
+});
+
+router.post('/demo-login', async (req, res) => {
+  try {
+    const { email, password } = localDemoCredentials(req);
+    return await authenticate(email, password, res);
+  } catch (error) {
+    return res.status(error.status || 503).json({ error: error.status ? error.message : 'Demo sign-in unavailable' });
   }
 });
 

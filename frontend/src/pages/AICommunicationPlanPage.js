@@ -12,7 +12,7 @@ export default function AICommunicationPlanPage() {
         { key: 'scenario',      label: 'Scenario',      type: 'textarea', placeholder: 'e.g. Three-team coordinated response to Kabini eastern fence incident...' },
         { key: 'context_notes', label: 'Available Comms', type: 'textarea', placeholder: 'Available VHF, sat, repeaters, terrain limitations, op duration.' },
       ]}
-      run={(v) => aiCommunicationPlan({ scenario: v.scenario, context: { notes: v.context_notes } })}
+      run={(v, requestOptions) => aiCommunicationPlan({ scenario: v.scenario, context: { notes: v.context_notes } }, requestOptions)}
     />
   );
 }

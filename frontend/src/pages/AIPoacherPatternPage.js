@@ -11,7 +11,7 @@ export default function AIPoacherPatternPage() {
       inputs={[
         { key: 'extra_notes', label: 'Analysis bias / notes', type: 'textarea', placeholder: 'Optional: weight toward a specific incident class, region or time window.' },
       ]}
-      run={(v) => aiPoacherPattern({ extra_notes: v.extra_notes })}
+      run={(v, requestOptions) => aiPoacherPattern({ extra_notes: v.extra_notes }, requestOptions)}
     />
   );
 }

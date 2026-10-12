@@ -12,7 +12,7 @@ export default function AIPatrolDispatchPage() {
         { key: 'objective',     label: 'Objective',     type: 'textarea', placeholder: 'e.g. Sweep snare-density spike along Kabini gate trail km3.2 within 12 hours...' },
         { key: 'context_notes', label: 'Context Notes', type: 'textarea', placeholder: 'Available rangers, vehicles, drones, comms constraints, threat history.' },
       ]}
-      run={(v) => aiPatrolDispatch({ objective: v.objective, context: { notes: v.context_notes } })}
+      run={(v, requestOptions) => aiPatrolDispatch({ objective: v.objective, context: { notes: v.context_notes } }, requestOptions)}
     />
   );
 }

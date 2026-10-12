@@ -13,11 +13,11 @@ export default function AICameraTrapClassifyPage() {
         { key: 'attachment_id', label: 'Attachment ID', type: 'number',   placeholder: 'Optional — attachment row id if image is uploaded' },
         { key: 'description',   label: 'Description',   type: 'textarea', placeholder: 'Describe the capture in words — size, coat pattern, behaviour, time, IR vs daylight…' },
       ]}
-      run={(v) => aiCameraTrapImageClassify({
+      run={(v, requestOptions) => aiCameraTrapImageClassify({
         camera_id: v.camera_id,
         attachment_id: v.attachment_id || null,
         description: v.description,
-      })}
+      }, requestOptions)}
     />
   );
 }

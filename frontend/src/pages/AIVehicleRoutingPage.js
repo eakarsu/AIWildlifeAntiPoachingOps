@@ -13,7 +13,7 @@ export default function AIVehicleRoutingPage() {
         { key: 'destination',       label: 'Destination',       placeholder: 'e.g. Kabini eastern fence stretch' },
         { key: 'constraints_notes', label: 'Constraints',       type: 'textarea', placeholder: 'Vehicle ID, fuel state, weather, hazard intel.' },
       ]}
-      run={(v) => aiVehicleRouting({ origin: v.origin, destination: v.destination, constraints: { notes: v.constraints_notes } })}
+      run={(v, requestOptions) => aiVehicleRouting({ origin: v.origin, destination: v.destination, constraints: { notes: v.constraints_notes } }, requestOptions)}
     />
   );
 }

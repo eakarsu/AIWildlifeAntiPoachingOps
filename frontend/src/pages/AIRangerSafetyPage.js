@@ -11,7 +11,7 @@ export default function AIRangerSafetyPage() {
       inputs={[
         { key: 'sector', label: 'Sector', placeholder: 'e.g. Kabini-E, Mara-N, Hluhluwe-N, Niassa-4' },
       ]}
-      run={(v) => aiRangerSafety({ sector: v.sector })}
+      run={(v, requestOptions) => aiRangerSafety({ sector: v.sector }, requestOptions)}
     />
   );
 }

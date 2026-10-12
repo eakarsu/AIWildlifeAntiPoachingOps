@@ -11,7 +11,7 @@ export default function AIWeatherImpactPage() {
       inputs={[
         { key: 'forecast_notes', label: 'Forecast', type: 'textarea', placeholder: 'Free-form weather forecast covering ceilings, visibility, winds, rain, temperature.' },
       ]}
-      run={(v) => aiWeatherImpact({ forecast: { notes: v.forecast_notes } })}
+      run={(v, requestOptions) => aiWeatherImpact({ forecast: { notes: v.forecast_notes } }, requestOptions)}
     />
   );
 }

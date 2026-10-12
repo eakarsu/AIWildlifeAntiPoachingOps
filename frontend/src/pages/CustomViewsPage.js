@@ -57,8 +57,8 @@ export default function CustomViewsPage() {
       </Panel>
 
       <Panel
-        title="Camera-Trap Gallery · Species Classifier"
-        subtitle="Recent camera-trap captures with stub species-ID overlay (top-1 prediction + alternates)."
+        title="Camera-Trap Gallery"
+        subtitle="Saved camera-trap records and their latest recorded event."
       >
         <CameraTrapGallery />
       </Panel>

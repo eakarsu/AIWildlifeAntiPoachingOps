@@ -12,7 +12,7 @@ export default function AISpeciesIdPage() {
         { key: 'description',   label: 'Description', type: 'textarea', placeholder: 'e.g. Heavily armored small mammal, brown overlapping scales, curled defensively...' },
         { key: 'context_notes', label: 'Context',     type: 'textarea', placeholder: 'Camera ID, location, time of day, ambient conditions.' },
       ]}
-      run={(v) => aiSpeciesId({ description: v.description, context: { notes: v.context_notes } })}
+      run={(v, requestOptions) => aiSpeciesId({ description: v.description, context: { notes: v.context_notes } }, requestOptions)}
     />
   );
 }

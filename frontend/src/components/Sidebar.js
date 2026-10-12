@@ -4,6 +4,8 @@ import { logout, getStoredUser } from '../services/api';
 
 const OVERVIEW = [
   { to: '/', label: 'Command Overview', end: true },
+  { to: '/codex/operations', label: 'Operations Desk' },
+  { to: '/codex/custom-viz', label: 'Record Insights' },
 ];
 
 const RANGERS = [

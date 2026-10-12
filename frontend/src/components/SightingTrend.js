@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
 } from 'recharts';
-import { getToken } from '../services/api';
+import { getCustomView } from '../services/api';
 
 const PALETTE = [
   '#22c55e', '#06b6d4', '#a78bfa', '#f59e0b', '#ef4444',
@@ -15,13 +15,9 @@ export default function SightingTrend() {
   const [err, setErr] = useState(null);
 
   useEffect(() => {
-    const token = getToken();
-    fetch('http://localhost:3077/api/custom-views/sighting-trend', {
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-    })
-      .then((r) => r.json())
+    getCustomView('sighting-trend')
       .then((d) => {
-        if (d.error) throw new Error(d.error);
+        if (!d || typeof d !== 'object' || Array.isArray(d) || !Array.isArray(d.series) || !Array.isArray(d.species)) throw new Error('Invalid tactical view data.');
         setData(d);
       })
       .catch((e) => setErr(e.message));

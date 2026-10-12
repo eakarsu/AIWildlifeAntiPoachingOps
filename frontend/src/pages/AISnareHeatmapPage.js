@@ -9,7 +9,7 @@ export default function AISnareHeatmapPage() {
       feature="snare-density-heatmap"
       subtitle="Cluster recent snare-finds into a structured density heatmap with sweep recommendations."
       inputs={[]}
-      run={() => aiSnareHeatmap({})}
+      run={(_values, requestOptions) => aiSnareHeatmap({}, requestOptions)}
     />
   );
 }

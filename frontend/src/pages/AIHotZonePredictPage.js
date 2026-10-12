@@ -11,7 +11,7 @@ export default function AIHotZonePredictPage() {
       inputs={[
         { key: 'region', label: 'Region / Park', placeholder: 'e.g. Kruger South, Maasai Mara North, Selous Rufiji' },
       ]}
-      run={(v) => aiHotZonePredict({ region: v.region })}
+      run={(v, requestOptions) => aiHotZonePredict({ region: v.region }, requestOptions)}
     />
   );
 }

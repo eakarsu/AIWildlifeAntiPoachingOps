@@ -12,7 +12,7 @@ export default function AIIncidentNarratorPage() {
         { key: 'notes',     label: 'Field Notes', type: 'textarea', placeholder: 'Paste ranger field notes verbatim. Time, location, observations, evidence handled.' },
         { key: 'ranger_id', label: 'Ranger ID',   type: 'text',     placeholder: 'e.g. RNG-001' },
       ]}
-      run={(v) => aiIncidentNarrator({ notes: v.notes, ranger_id: v.ranger_id })}
+      run={(v, requestOptions) => aiIncidentNarrator({ notes: v.notes, ranger_id: v.ranger_id }, requestOptions)}
     />
   );
 }

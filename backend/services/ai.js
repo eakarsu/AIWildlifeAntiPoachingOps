@@ -1,40 +1,5 @@
-// AI helper service for AIWildlifeAntiPoachingOps
-// Reads OPENROUTER_API_KEY and OPENROUTER_MODEL from:
-//   1. this project's .env (already loaded by server.js)
-//   2. fallback: /Users/erolakarsu/projects/beauty-wellness-ai/.env (canonical source)
-// Never overwrites or wipes credentials.
-
-const fs = require('fs');
-const path = require('path');
-
-const FALLBACK_ENV = '/Users/erolakarsu/projects/beauty-wellness-ai/.env';
-
-function readFallbackEnv() {
-  try {
-    if (!fs.existsSync(FALLBACK_ENV)) return {};
-    const raw = fs.readFileSync(FALLBACK_ENV, 'utf8');
-    const out = {};
-    for (const line of raw.split('\n')) {
-      const m = line.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*)\s*$/);
-      if (!m) continue;
-      let val = m[2];
-      if (val.startsWith('"') && val.endsWith('"')) val = val.slice(1, -1);
-      if (val.startsWith("'") && val.endsWith("'")) val = val.slice(1, -1);
-      out[m[1]] = val;
-    }
-    return out;
-  } catch (e) {
-    console.warn('[ai] fallback env read failed:', e.message);
-    return {};
-  }
-}
-
-function getOpenRouterCreds() {
-  const fb = readFallbackEnv();
-  const key = process.env.OPENROUTER_API_KEY || fb.OPENROUTER_API_KEY || '';
-  const model = process.env.OPENROUTER_MODEL || fb.OPENROUTER_MODEL || 'anthropic/claude-haiku-4.5';
-  return { key, model };
-}
+// Native OpenRouter calls fail honestly and share the owning request's cancellation.
+const { callOpenRouter } = require('./aiProvider');
 
 const SYSTEM_PROMPT =
   'You are a senior wildlife anti-poaching operations analyst supporting a ranger command center. ' +
@@ -71,58 +36,6 @@ function wrapAdvisory(result, kind = 'engagement_adjacent') {
       'Ranger lead on the ground is the final decision authority on any contact with suspects.',
     advisory_kind: kind,
   };
-}
-
-function callOpenRouter(systemPrompt, userPrompt) {
-  return new Promise((resolve, reject) => {
-    const { key, model } = getOpenRouterCreds();
-    if (!key) {
-      return resolve({ error: 'OPENROUTER_API_KEY not configured' });
-    }
-    const https = require('https');
-    const payload = JSON.stringify({
-      model,
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userPrompt },
-      ],
-      temperature: 0.6,
-      max_tokens: 2000,
-    });
-
-    const options = {
-      hostname: 'openrouter.ai',
-      path: '/api/v1/chat/completions',
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Content-Length': Buffer.byteLength(payload),
-        Authorization: `Bearer ${key}`,
-        'HTTP-Referer': 'http://localhost:3076',
-        'X-Title': 'AI Wildlife Anti-Poaching Ops',
-      },
-    };
-
-    const req = https.request(options, (res) => {
-      let body = '';
-      res.on('data', (chunk) => (body += chunk));
-      res.on('end', () => {
-        try {
-          const parsed = JSON.parse(body);
-          if (parsed.error) {
-            return resolve({ error: parsed.error.message || 'OpenRouter error', raw: body });
-          }
-          const content = parsed.choices?.[0]?.message?.content || '';
-          resolve(content);
-        } catch (e) {
-          resolve({ error: 'AI response parse failed', raw: body });
-        }
-      });
-    });
-    req.on('error', (e) => resolve({ error: e.message }));
-    req.write(payload);
-    req.end();
-  });
 }
 
 function safeJsonParse(response, fallback) {
@@ -231,7 +144,7 @@ async function snareDensityHeatmap(snares = []) {
 }
 
 // 5) poacher-pattern-analyze
-async function poacherPatternAnalyze(incidents = []) {
+async function poacherPatternAnalyze(incidents = [], extraNotes = '') {
   const sys = `${SYSTEM_PROMPT} Analyze poacher incident patterns to extract MO, timing and likely actors. Return strict JSON:
 {
   "modus_operandi": [{ "pattern": string, "frequency": number, "evidence": [string] }],
@@ -242,7 +155,7 @@ async function poacherPatternAnalyze(incidents = []) {
   "recommended_counters": [string],
   "summary": string
 }`;
-  const usr = `Incidents:\n${JSON.stringify(incidents, null, 2)}`;
+  const usr = `Incidents:\n${JSON.stringify(incidents, null, 2)}\nAnalysis notes:\n${extraNotes}`;
   const r = await callOpenRouter(sys, usr);
   return safeJsonParse(r, { summary: typeof r === 'string' ? r : 'No response', modus_operandi: [] });
 }
